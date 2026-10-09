@@ -1,0 +1,2012 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Horario LPT</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Iconos para PWA -->
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    
+    <!-- Meta tags para iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Control Horario">
+    <meta name="theme-color" content="#059669">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0fdf4;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #065f46, #059669);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s;
+        }
+        
+        .tab:hover {
+            background: #f0fdf4;
+        }
+        
+        .tab.active {
+            background: #059669;
+            color: white;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background: #f0fdf4;
+            padding: 15px 20px;
+            border-bottom: 1px solid #d1fae5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-header h2 {
+            font-size: 18px;
+            color: #065f46;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        /* Calendario */
+        .calendar {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .calendar-header h3 {
+            font-size: 18px;
+            color: #065f46;
+            text-transform: capitalize;
+        }
+        
+        .calendar-nav {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .calendar-nav button {
+            padding: 8px 12px;
+            border: 1px solid #d1fae5;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #059669;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .calendar-nav button:hover {
+            background: #f0fdf4;
+        }
+        
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .calendar-weekdays span {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            padding: 8px;
+        }
+        
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #374151;
+            transition: all 0.3s;
+            position: relative;
+            background: white;
+        }
+        
+        .calendar-day:hover {
+            background: #f0fdf4;
+            border-color: #059669;
+        }
+        
+        .calendar-day.empty {
+            border: none;
+            cursor: default;
+            background: transparent;
+        }
+        
+        .calendar-day.today {
+            border-color: #059669;
+            font-weight: bold;
+            color: #059669;
+        }
+        
+        .calendar-day.has-record {
+            background: #d1fae5;
+            border-color: #059669;
+            color: #065f46;
+            font-weight: 600;
+        }
+        
+        .calendar-day.has-record::after {
+            content: '✓';
+            position: absolute;
+            bottom: 2px;
+            font-size: 10px;
+            color: #059669;
+        }
+        
+        .calendar-day.selected {
+            background: #059669;
+            color: white;
+            border-color: #059669;
+        }
+        
+        .calendar-day.selected.has-record {
+            background: #047857;
+        }
+        
+        .calendar-day.selected.has-record::after {
+            color: white;
+        }
+        
+        /* Formulario de registro */
+        .time-form {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f0fdf4;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .time-form h3 {
+            font-size: 16px;
+            color: #065f46;
+            margin-bottom: 15px;
+        }
+        
+        .time-display {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .time-display .time {
+            font-size: 48px;
+            font-weight: bold;
+            color: #059669;
+        }
+        
+        .time-display .label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            width: 100%;
+        }
+        
+        .btn-primary {
+            background: #059669;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #047857;
+        }
+        
+        .btn-secondary {
+            background: white;
+            border: 1px solid #059669;
+            color: #059669;
+        }
+        
+        .btn-secondary:hover {
+            background: #f0fdf4;
+        }
+        
+        .btn-danger {
+            background: white;
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+        
+        .btn-danger:hover {
+            background: #fef2f2;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-register {
+            background: #059669;
+            color: white;
+            padding: 20px;
+            font-size: 18px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .btn-register:hover {
+            background: #047857;
+            transform: scale(1.02);
+        }
+        
+        .btn-register:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-register:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Estado del registro */
+        .status-banner {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .status-entrada {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        
+        .status-salida {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .status-completo {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+        
+        .status-error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .status-location {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        
+        .status-location-ok {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .status-location-error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .status-location-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+        
+        /* Lista de registros */
+        .record-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border: 1px solid #d1fae5;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .record-item:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .record-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .record-info {
+            text-align: right;
+        }
+        
+        .record-info p {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .record-info span {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge-green {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge-blue {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .badge-yellow {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .badge-red {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+        
+        /* Login */
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, #065f46, #059669);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .login-header h1 {
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
+        
+        .login-body {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1fae5;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #059669;
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #059669;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .toast-error {
+            background: #dc2626;
+        }
+        
+        .toast-warning {
+            background: #f59e0b;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th {
+            text-align: left;
+            padding: 12px;
+            background: #f0fdf4;
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #d1fae5;
+        }
+        
+        .table td {
+            padding: 12px;
+            border-bottom: 1px solid #f0fdf4;
+            font-size: 14px;
+        }
+        
+        .table tr:hover {
+            background: #f0fdf4;
+        }
+        
+        .clock-display {
+            font-size: 64px;
+            font-weight: bold;
+            color: #059669;
+            text-align: center;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .clock-label {
+            font-size: 16px;
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn-export {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-excel {
+            background: #059669;
+            color: white;
+        }
+        
+        .btn-excel:hover {
+            background: #047857;
+        }
+        
+        .btn-csv {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-csv:hover {
+            background: #2563eb;
+        }
+        
+        .btn-edit {
+            background: #f59e0b;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        
+        .btn-edit:hover {
+            background: #d97706;
+        }
+        
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            width: auto;
+        }
+        
+        .btn-edit-record {
+            background: #f59e0b;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn-edit-record:hover {
+            background: #d97706;
+        }
+        
+        .btn-edit-record:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
+        
+        .edit-form {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #d1fae5;
+            border-radius: 8px;
+        }
+        
+        .edit-form h4 {
+            font-size: 14px;
+            color: #065f46;
+            margin-bottom: 10px;
+        }
+        
+        .edit-form .form-group {
+            margin-bottom: 10px;
+        }
+        
+        .edit-form input[type="time"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d1fae5;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .edit-form input[type="time"]:focus {
+            outline: none;
+            border-color: #059669;
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+        }
+        
+        .edit-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .edit-actions .btn {
+            flex: 1;
+        }
+        
+        .access-denied {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+        
+        .location-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border: 1px solid #d1fae5;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+        
+        .location-info .icon {
+            font-size: 20px;
+        }
+        
+        .location-info .status {
+            font-weight: 500;
+        }
+        
+        .location-info .coords {
+            color: #6b7280;
+            font-size: 12px;
+        }
+        
+        .location-info .distance {
+            color: #059669;
+            font-weight: 500;
+        }
+        
+        .location-info .distance-error {
+            color: #dc2626;
+            font-weight: 500;
+        }
+        
+        .btn-location {
+            background: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .btn-location:hover {
+            background: #2563eb;
+        }
+        
+        .btn-location:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
+        
+        .btn-location-checking {
+            background: #f59e0b;
+        }
+        
+        .btn-location-checking:hover {
+            background: #d97706;
+        }
+        
+        .location-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .location-badge-ok {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .location-badge-error {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+        
+        .location-badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        /* Botón de instalación PWA */
+        .install-banner {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border: 2px solid #059669;
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .install-banner.show {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+        
+        .install-banner h3 {
+            font-size: 16px;
+            color: #065f46;
+            margin-bottom: 10px;
+        }
+        
+        .install-banner p {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 15px;
+        }
+        
+        .install-banner .btn {
+            margin-bottom: 5px;
+        }
+        
+        .install-banner .btn-close {
+            background: transparent;
+            border: none;
+            color: #6b7280;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1;
+                text-align: center;
+            }
+            
+            .clock-display {
+                font-size: 48px;
+            }
+            
+            .export-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <div id="toast" class="toast"></div>
+    
+    <!-- Banner de instalación PWA -->
+    <div id="installBanner" class="install-banner">
+        <h3>📱 Instalar Control Horario</h3>
+        <p>Instala la aplicación en tu dispositivo para acceso rápido</p>
+        <button class="btn btn-primary" id="installBtn">📲 Instalar App</button>
+        <button class="btn-close" id="closeInstallBanner">Cerrar</button>
+    </div>
+    
+    <script>
+        // Configuración de ubicación permitida (ejemplo: oficina LPT)
+        // Puedes cambiar estas coordenadas por las de tu oficina
+        const ALLOWED_LOCATION = {
+            lat: 19.4326,  // Latitud de ejemplo (Ciudad de México)
+            lng: -99.1332, // Longitud de ejemplo
+            radius: 100,   // Radio en metros (100 metros)
+            name: "Oficina LPT"
+        };
+        
+        // Datos iniciales
+        const initialUsers = [
+            { id: "1", name: "Administrador", username: "admin", password: "admin123", role: "admin", color: "#10b981" },
+            { id: "2", name: "Carlos Ruiz", username: "carlos", password: "carlos123", role: "employee", color: "#3b82f6" },
+            { id: "3", name: "María López", username: "maria", password: "maria123", role: "employee", color: "#8b5cf6" },
+        ];
+        
+        const initialRecords = [];
+        
+        // Estado de la aplicación
+        let users = loadFromStorage('users', initialUsers);
+        let records = loadFromStorage('records', initialRecords);
+        let currentUser = loadFromStorage('currentUser', null);
+        let activeTab = 'registro';
+        let selectedDate = new Date().toISOString().split('T')[0];
+        let currentMonth = new Date();
+        let editingRecordId = null;
+        let currentLocation = null;
+        let locationStatus = 'idle'; // idle, checking, ok, error
+        let locationError = '';
+        let locationDistance = null;
+        
+        // PWA - Variables de instalación
+        let deferredPrompt = null;
+        
+        // Utilidades
+        function loadFromStorage(key, defaultValue) {
+            try {
+                const saved = localStorage.getItem(key);
+                return saved ? JSON.parse(saved) : defaultValue;
+            } catch (e) {
+                return defaultValue;
+            }
+        }
+        
+        function saveToStorage(key, value) {
+            localStorage.setItem(key, JSON.stringify(value));
+        }
+        
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show';
+            if (type === 'error') {
+                toast.classList.add('toast-error');
+            } else if (type === 'warning') {
+                toast.classList.add('toast-warning');
+            }
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        function calculateHours(entry, exit) {
+            if (!entry || !exit) return '0.00';
+            const [eh, em] = entry.split(':').map(Number);
+            const [xh, xm] = exit.split(':').map(Number);
+            const diff = (xh * 60 + xm) - (eh * 60 + em);
+            return (diff / 60).toFixed(2);
+        }
+        
+        function getUserName(id) {
+            const user = users.find(u => u.id === id);
+            return user ? user.name : 'Desconocido';
+        }
+        
+        function getUserColor(id) {
+            const user = users.find(u => u.id === id);
+            return user ? user.color : '#6b7280';
+        }
+        
+        function getInitials(name) {
+            return name.charAt(0).toUpperCase();
+        }
+        
+        function getRecordForDate(date) {
+            return records.find(r => r.userId === currentUser.id && r.date === date);
+        }
+        
+        function getRecordStatus(record) {
+            if (!record) return 'none';
+            if (record.entryTime && !record.exitTime) return 'entrada';
+            if (record.entryTime && record.exitTime) return 'completo';
+            return 'none';
+        }
+        
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toTimeString().slice(0, 5);
+        }
+        
+        // Funciones de geolocalización
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // Radio de la Tierra en metros
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; // Distancia en metros
+        }
+        
+        function getLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Tu navegador no soporta geolocalización'));
+                    return;
+                }
+                
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        resolve({
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        });
+                    },
+                    (error) => {
+                        reject(error);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            });
+        }
+        
+        function getLocationErrorMessage(code) {
+            switch(code) {
+                case 1:
+                    return 'Permiso denegado. Activa la ubicación en tu navegador';
+                case 2:
+                    return 'No se pudo obtener la ubicación. Intenta de nuevo';
+                case 3:
+                    return 'Tiempo de espera agotado. Intenta de nuevo';
+                default:
+                    return 'Error al obtener la ubicación';
+            }
+        }
+        
+        // Función para verificar ubicación automáticamente al registrar
+        async function verifyLocationForRegistration() {
+            try {
+                const location = await getLocation();
+                currentLocation = location;
+                locationDistance = calculateDistance(
+                    location.lat,
+                    location.lng,
+                    ALLOWED_LOCATION.lat,
+                    ALLOWED_LOCATION.lng
+                );
+                
+                if (locationDistance <= ALLOWED_LOCATION.radius) {
+                    locationStatus = 'ok';
+                    locationError = '';
+                    return { valid: true, distance: Math.round(locationDistance) };
+                } else {
+                    locationStatus = 'error';
+                    locationError = `Estás a ${Math.round(locationDistance)} metros de la ubicación permitida`;
+                    return { valid: false, distance: Math.round(locationDistance) };
+                }
+            } catch (error) {
+                locationStatus = 'error';
+                locationError = getLocationErrorMessage(error.code || 0);
+                return { valid: null, distance: null, error: locationError };
+            }
+        }
+        
+        // Funciones del calendario
+        function getDaysInMonth(year, month) {
+            return new Date(year, month + 1, 0).getDate();
+        }
+        
+        function getFirstDayOfMonth(year, month) {
+            return new Date(year, month, 1).getDay();
+        }
+        
+        function formatDate(year, month, day) {
+            return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+        
+        function getMonthName(date) {
+            return date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+        }
+        
+        function hasRecordOnDate(date) {
+            return records.some(r => r.date === date);
+        }
+        
+        function renderCalendar() {
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+            const daysInMonth = getDaysInMonth(year, month);
+            const firstDay = getFirstDayOfMonth(year, month);
+            const today = new Date().toISOString().split('T')[0];
+            
+            let html = `
+                <div class="calendar">
+                    <div class="calendar-header">
+                        <h3>${getMonthName(currentMonth)}</h3>
+                        <div class="calendar-nav">
+                            <button onclick="changeMonth(-1)">←</button>
+                            <button onclick="changeMonth(1)">→</button>
+                        </div>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <span>Dom</span>
+                        <span>Lun</span>
+                        <span>Mar</span>
+                        <span>Mié</span>
+                        <span>Jue</span>
+                        <span>Vie</span>
+                        <span>Sáb</span>
+                    </div>
+                    <div class="calendar-days">
+            `;
+            
+            for (let i = 0; i < firstDay; i++) {
+                html += `<div class="calendar-day empty"></div>`;
+            }
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = formatDate(year, month, day);
+                const isToday = dateStr === today;
+                const hasRecord = hasRecordOnDate(dateStr);
+                const isSelected = dateStr === selectedDate;
+                
+                let classes = 'calendar-day';
+                if (isToday) classes += ' today';
+                if (hasRecord) classes += ' has-record';
+                if (isSelected) classes += ' selected';
+                
+                html += `
+                    <div class="${classes}" onclick="selectDate('${dateStr}')">
+                        ${day}
+                    </div>
+                `;
+            }
+            
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        function renderLocationStatus() {
+            let html = `
+                <div class="location-info">
+                    <div class="icon">📍</div>
+                    <div>
+                        <div class="status">Ubicación: ${ALLOWED_LOCATION.name}</div>
+                        <div class="coords">${ALLOWED_LOCATION.lat.toFixed(4)}, ${ALLOWED_LOCATION.lng.toFixed(4)} (radio: ${ALLOWED_LOCATION.radius}m)</div>
+            `;
+            
+            if (locationStatus === 'idle') {
+                html += `<div class="coords">No verificada aún</div>`;
+            } else if (locationStatus === 'checking') {
+                html += `<div class="coords" style="color: #f59e0b;">⏳ Verificando ubicación...</div>`;
+            } else if (locationStatus === 'ok') {
+                html += `<div class="distance">✅ Ubicación correcta (${Math.round(locationDistance)}m)</div>`;
+            } else if (locationStatus === 'error') {
+                html += `<div class="distance-error">❌ ${locationError}</div>`;
+            }
+            
+            html += `</div></div>`;
+            
+            return html;
+        }
+        
+        function renderTimeForm() {
+            const record = getRecordForDate(selectedDate);
+            const status = getRecordStatus(record);
+            const isAdmin = currentUser.role === 'admin';
+            
+            let html = `
+                <div class="time-form">
+                    <h3>Registro del ${new Date(selectedDate).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</h3>
+            `;
+            
+            // Mostrar estado de ubicación
+            html += renderLocationStatus();
+            
+            if (status === 'none') {
+                html += `
+                    <div class="status-banner status-entrada">
+                        ⏰ Sin registro - Pulse el botón para registrar entrada
+                    </div>
+                    <div class="clock-display" id="liveClock">${getCurrentTime()}</div>
+                    <div class="clock-label">Hora actual del sistema</div>
+                    <button class="btn-register" onclick="registerEntry()">
+                        ⏰ REGISTRAR ENTRADA
+                    </button>
+                `;
+            } else if (status === 'entrada') {
+                html += `
+                    <div class="status-banner status-salida">
+                        ✅ Entrada registrada a las ${record.entryTime}
+                    </div>
+                    <div class="time-display">
+                        <div class="time">${record.entryTime}</div>
+                        <div class="label">Hora de entrada</div>
+                    </div>
+                    <div class="clock-display" id="liveClock">${getCurrentTime()}</div>
+                    <div class="clock-label">Hora actual del sistema</div>
+                    <button class="btn-register" onclick="registerExit()">
+                        🕐 REGISTRAR SALIDA
+                    </button>
+                `;
+            } else if (status === 'completo') {
+                const hours = calculateHours(record.entryTime, record.exitTime);
+                html += `
+                    <div class="status-banner status-completo">
+                        ✅ Registro completo
+                    </div>
+                    <div class="time-display">
+                        <div class="time">${record.entryTime} - ${record.exitTime}</div>
+                        <div class="label">Total: ${hours} horas</div>
+                    </div>
+                `;
+                
+                // Solo admin puede editar registros completos
+                if (isAdmin) {
+                    html += `
+                        <button class="btn-edit-record" onclick="startEditRecord('${record.id}')">
+                            ✏️ Editar Registro
+                        </button>
+                    `;
+                } else {
+                    html += `
+                        <div class="status-banner status-entrada" style="margin-top: 10px;">
+                            🔒 Solo el administrador puede editar este registro
+                        </div>
+                    `;
+                }
+            }
+            
+            // Formulario de edición (solo admin)
+            if (isAdmin && editingRecordId) {
+                const editRecord = records.find(r => r.id === editingRecordId);
+                if (editRecord) {
+                    html += `
+                        <div class="edit-form">
+                            <h4>✏️ Editar Registro</h4>
+                            <div class="form-group">
+                                <label>Hora de Entrada</label>
+                                <input type="time" id="editEntryTime" value="${editRecord.entryTime || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>Hora de Salida</label>
+                                <input type="time" id="editExitTime" value="${editRecord.exitTime || ''}">
+                            </div>
+                            <div class="edit-actions">
+                                <button class="btn btn-primary" onclick="saveEditRecord()">💾 Guardar</button>
+                                <button class="btn btn-secondary" onclick="cancelEditRecord()">Cancelar</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            html += `</div>`;
+            return html;
+        }
+        
+        // Renderizado
+        function render() {
+            const app = document.getElementById('app');
+            
+            if (!currentUser) {
+                app.innerHTML = renderLogin();
+            } else {
+                app.innerHTML = renderApp();
+            }
+            
+            attachEvents();
+            startClock();
+        }
+        
+        function renderLogin() {
+            return `
+                <div class="login-container">
+                    <div class="login-card">
+                        <div class="login-header">
+                            <h1>⏰ CONTROL HORARIO LPT</h1>
+                            <p>Inicia sesión para continuar</p>
+                        </div>
+                        <div class="login-body">
+                            <form id="loginForm">
+                                <div class="form-group">
+                                    <label for="username">Usuario</label>
+                                    <input type="text" id="username" placeholder="Ingresa tu usuario" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="password">Contraseña</label>
+                                    <input type="password" id="password" placeholder="Ingresa tu contraseña" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderApp() {
+            const isAdmin = currentUser.role === 'admin';
+            const visibleRecords = isAdmin 
+                ? records 
+                : records.filter(r => r.userId === currentUser.id);
+            
+            return `
+                <header class="header">
+                    <div class="header-content">
+                        <div>
+                            <h1>⏰ CONTROL HORARIO LPT</h1>
+                            <p>${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="avatar" style="background: ${currentUser.color}">${getInitials(currentUser.name)}</div>
+                                <div>
+                                    <p style="font-size: 14px; font-weight: 500;">${currentUser.name}</p>
+                                    <p style="font-size: 12px; opacity: 0.9;">${isAdmin ? 'Administrador' : 'Empleado'}</p>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary" onclick="handleLogout()">Salir</button>
+                        </div>
+                    </div>
+                </header>
+                
+                <main class="main">
+                    <div class="tabs">
+                        <button class="tab ${activeTab === 'registro' ? 'active' : ''}" onclick="setTab('registro')">📋 Registro</button>
+                        <button class="tab ${activeTab === 'historial' ? 'active' : ''}" onclick="setTab('historial')">📅 Historial</button>
+                        ${isAdmin ? `
+                            <button class="tab ${activeTab === 'usuarios' ? 'active' : ''}" onclick="setTab('usuarios')">👥 Usuarios</button>
+                        ` : ''}
+                    </div>
+                    
+                    ${activeTab === 'registro' ? renderRegistro(visibleRecords) : ''}
+                    ${activeTab === 'historial' ? renderHistorial(visibleRecords) : ''}
+                    ${activeTab === 'usuarios' && isAdmin ? renderUsuarios() : ''}
+                </main>
+            `;
+        }
+        
+        function renderRegistro(visibleRecords) {
+            return `
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>📅 Calendario</h2>
+                        </div>
+                        <div class="card-body">
+                            ${renderCalendar()}
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>⏰ Registro de Horas</h2>
+                        </div>
+                        <div class="card-body">
+                            ${renderTimeForm()}
+                            
+                            <div style="margin-top: 20px;">
+                                <h3 style="font-size: 16px; color: #065f46; margin-bottom: 10px;">Registros Recientes</h3>
+                                <div class="record-list">
+                                    ${visibleRecords.slice(-5).reverse().map(record => `
+                                        <div class="record-item">
+                                            <div class="record-user">
+                                                <div class="avatar" style="background: ${getUserColor(record.userId)}">${getInitials(getUserName(record.userId))}</div>
+                                                <div>
+                                                    <p style="font-size: 14px; font-weight: 500;">${getUserName(record.userId)}</p>
+                                                    <p style="font-size: 12px; color: #6b7280;">${record.date}</p>
+                                                </div>
+                                            </div>
+                                            <div class="record-info">
+                                                <p>${record.entryTime || 'Pendiente'} - ${record.exitTime || 'Pendiente'}</p>
+                                                <span>${calculateHours(record.entryTime, record.exitTime)} horas</span>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderHistorial(visibleRecords) {
+            const isAdmin = currentUser.role === 'admin';
+            
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Historial de Registros</h2>
+                    </div>
+                    <div class="card-body">
+                        ${isAdmin ? `
+                            <div class="export-buttons">
+                                <button class="btn-export btn-excel" onclick="exportToExcel()">
+                                    📊 Exportar a Excel
+                                </button>
+                                <button class="btn-export btn-csv" onclick="exportToCSV()">
+                                    📄 Exportar a CSV
+                                </button>
+                            </div>
+                        ` : `
+                            <div class="access-denied">
+                                🔒 Solo el administrador puede exportar los registros
+                            </div>
+                        `}
+                        <div style="overflow-x: auto;">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Fecha</th>
+                                        <th>Entrada</th>
+                                        <th>Salida</th>
+                                        <th>Horas</th>
+                                        <th>Ubicación</th>
+                                        <th>Estado</th>
+                                        ${isAdmin ? '<th>Acciones</th>' : ''}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${visibleRecords.map(record => {
+                                        const status = getRecordStatus(record);
+                                        const statusBadge = status === 'completo' 
+                                            ? '<span class="badge badge-green">Completo</span>'
+                                            : status === 'entrada'
+                                                ? '<span class="badge badge-yellow">Solo entrada</span>'
+                                                : '<span class="badge badge-blue">Pendiente</span>';
+                                        
+                                        const locationBadge = record.locationValid === false 
+                                            ? '<span class="badge badge-red">❌ Ubicación incorrecta</span>'
+                                            : record.locationValid === true
+                                                ? '<span class="badge badge-green">✅ Ubicación correcta</span>'
+                                                : '<span class="badge badge-blue">No verificada</span>';
+                                        
+                                        return `
+                                            <tr>
+                                                <td>
+                                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                                        <div class="avatar" style="background: ${getUserColor(record.userId)}; width: 24px; height: 24px; font-size: 12px;">${getInitials(getUserName(record.userId))}</div>
+                                                        <span>${getUserName(record.userId)}</span>
+                                                    </div>
+                                                </td>
+                                                <td>${record.date}</td>
+                                                <td>${record.entryTime || 'Pendiente'}</td>
+                                                <td>${record.exitTime || 'Pendiente'}</td>
+                                                <td><span class="badge badge-green">${calculateHours(record.entryTime, record.exitTime)} h</span></td>
+                                                <td>${locationBadge}</td>
+                                                <td>${statusBadge}</td>
+                                                ${isAdmin ? `
+                                                    <td>
+                                                        <div style="display: flex; gap: 5px;">
+                                                            <button class="btn-edit" onclick="startEditRecord('${record.id}')">✏️</button>
+                                                            <button class="btn-delete" onclick="deleteRecord('${record.id}')">🗑️</button>
+                                                        </div>
+                                                    </td>
+                                                ` : ''}
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderUsuarios() {
+            return `
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Agregar Usuario</h2>
+                        </div>
+                        <div class="card-body">
+                            <form id="userForm">
+                                <div class="form-group">
+                                    <label for="newName">Nombre</label>
+                                    <input type="text" id="newName" placeholder="Nombre completo" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newUsername">Usuario</label>
+                                    <input type="text" id="newUsername" placeholder="Nombre de usuario" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newPassword">Contraseña</label>
+                                    <input type="password" id="newPassword" placeholder="Contraseña" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newRole">Rol</label>
+                                    <select id="newRole">
+                                        <option value="employee">Empleado</option>
+                                        <option value="admin">Administrador</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary">+ Agregar Usuario</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Lista de Usuarios</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="record-list">
+                                ${users.map(user => `
+                                    <div class="record-item">
+                                        <div class="record-user">
+                                            <div class="avatar" style="background: ${user.color}">${getInitials(user.name)}</div>
+                                            <div>
+                                                <p style="font-size: 14px; font-weight: 500;">${user.name}</p>
+                                                <p style="font-size: 12px; color: #6b7280;">@${user.username}</p>
+                                            </div>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span class="badge ${user.role === 'admin' ? 'badge-green' : 'badge-blue'}">${user.role === 'admin' ? 'Admin' : 'Empleado'}</span>
+                                            ${user.id !== currentUser.id ? `
+                                                <button class="btn-delete" onclick="deleteUser('${user.id}')">🗑️</button>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Funciones de exportación (solo admin)
+        function exportToExcel() {
+            if (currentUser.role !== 'admin') {
+                showToast('Solo el administrador puede exportar', 'error');
+                return;
+            }
+            
+            if (records.length === 0) {
+                showToast('No hay registros para exportar', 'error');
+                return;
+            }
+            
+            // Crear contenido CSV con separación correcta
+            const headers = ['Usuario', 'Fecha', 'Hora Entrada', 'Hora Salida', 'Horas Trabajadas', 'Ubicación', 'Estado'];
+            const rows = records.map(record => {
+                const status = getRecordStatus(record);
+                const statusText = status === 'completo' ? 'Completo' : status === 'entrada' ? 'Solo entrada' : 'Pendiente';
+                const locationText = record.locationValid === false ? 'Ubicación incorrecta' : record.locationValid === true ? 'Ubicación correcta' : 'No verificada';
+                return [
+                    getUserName(record.userId),
+                    record.date,
+                    record.entryTime || 'Pendiente',
+                    record.exitTime || 'Pendiente',
+                    calculateHours(record.entryTime, record.exitTime),
+                    locationText,
+                    statusText
+                ];
+            });
+            
+            // Crear CSV con separador de punto y coma para Excel
+            let csvContent = headers.join(';') + '\n';
+            rows.forEach(row => {
+                csvContent += row.join(';') + '\n';
+            });
+            
+            // Crear archivo y descargar
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.setAttribute('download', 'control_horario_lpt_' + new Date().toISOString().split('T')[0] + '.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showToast('Archivo Excel exportado correctamente');
+        }
+        
+        function exportToCSV() {
+            if (currentUser.role !== 'admin') {
+                showToast('Solo el administrador puede exportar', 'error');
+                return;
+            }
+            
+            if (records.length === 0) {
+                showToast('No hay registros para exportar', 'error');
+                return;
+            }
+            
+            // Crear contenido CSV
+            const headers = ['Usuario', 'Fecha', 'Hora Entrada', 'Hora Salida', 'Horas Trabajadas', 'Ubicación', 'Estado'];
+            const rows = records.map(record => {
+                const status = getRecordStatus(record);
+                const statusText = status === 'completo' ? 'Completo' : status === 'entrada' ? 'Solo entrada' : 'Pendiente';
+                const locationText = record.locationValid === false ? 'Ubicación incorrecta' : record.locationValid === true ? 'Ubicación correcta' : 'No verificada';
+                return [
+                    getUserName(record.userId),
+                    record.date,
+                    record.entryTime || 'Pendiente',
+                    record.exitTime || 'Pendiente',
+                    calculateHours(record.entryTime, record.exitTime),
+                    locationText,
+                    statusText
+                ];
+            });
+            
+            // Crear CSV con separador de coma
+            let csvContent = headers.join(',') + '\n';
+            rows.forEach(row => {
+                csvContent += row.join(',') + '\n';
+            });
+            
+            // Crear archivo y descargar
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.setAttribute('download', 'control_horario_lpt_' + new Date().toISOString().split('T')[0] + '.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showToast('Archivo CSV exportado correctamente');
+        }
+        
+        // Funciones de edición
+        function startEditRecord(recordId) {
+            if (currentUser.role !== 'admin') {
+                showToast('Solo el administrador puede editar registros', 'error');
+                return;
+            }
+            editingRecordId = recordId;
+            render();
+        }
+        
+        function cancelEditRecord() {
+            editingRecordId = null;
+            render();
+        }
+        
+        function saveEditRecord() {
+            const entryTime = document.getElementById('editEntryTime').value;
+            const exitTime = document.getElementById('editExitTime').value;
+            
+            if (!entryTime || !exitTime) {
+                showToast('Debe ingresar ambas horas', 'error');
+                return;
+            }
+            
+            const record = records.find(r => r.id === editingRecordId);
+            if (record) {
+                record.entryTime = entryTime;
+                record.exitTime = exitTime;
+                saveToStorage('records', records);
+                editingRecordId = null;
+                showToast('Registro actualizado correctamente');
+                render();
+            }
+        }
+        
+        // Eventos
+        function attachEvents() {
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+                    const user = users.find(u => u.username === username && u.password === password);
+                    if (user) {
+                        currentUser = user;
+                        saveToStorage('currentUser', currentUser);
+                        showToast('¡Bienvenido, ' + user.name + '!');
+                        render();
+                    } else {
+                        showToast('Usuario o contraseña incorrectos', 'error');
+                    }
+                });
+            }
+            
+            const userForm = document.getElementById('userForm');
+            if (userForm) {
+                userForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('newName').value;
+                    const username = document.getElementById('newUsername').value;
+                    const password = document.getElementById('newPassword').value;
+                    const role = document.getElementById('newRole').value;
+                    
+                    if (users.some(u => u.username === username)) {
+                        showToast('El nombre de usuario ya existe', 'error');
+                        return;
+                    }
+                    
+                    const colors = ['#f59e0b', '#ef4444', '#06b6d4', '#f97316', '#84cc16'];
+                    const newUser = {
+                        id: Date.now().toString(),
+                        name,
+                        username,
+                        password,
+                        role,
+                        color: colors[Math.floor(Math.random() * colors.length)]
+                    };
+                    
+                    users.push(newUser);
+                    saveToStorage('users', users);
+                    showToast('Usuario agregado correctamente');
+                    render();
+                });
+            }
+        }
+        
+        // Funciones globales
+        function setTab(tab) {
+            activeTab = tab;
+            editingRecordId = null;
+            render();
+        }
+        
+        function handleLogout() {
+            currentUser = null;
+            editingRecordId = null;
+            locationStatus = 'idle';
+            currentLocation = null;
+            locationDistance = null;
+            locationError = '';
+            saveToStorage('currentUser', null);
+            render();
+        }
+        
+        function selectDate(date) {
+            selectedDate = date;
+            editingRecordId = null;
+            render();
+        }
+        
+        function changeMonth(delta) {
+            currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1);
+            render();
+        }
+        
+        async function registerEntry() {
+            const entryTime = getCurrentTime();
+            
+            // Verificar ubicación automáticamente
+            const locationResult = await verifyLocationForRegistration();
+            
+            const existingRecord = getRecordForDate(selectedDate);
+            
+            if (existingRecord) {
+                existingRecord.entryTime = entryTime;
+                existingRecord.locationValid = locationResult.valid;
+                existingRecord.locationDistance = locationResult.distance;
+                showToast('Hora de entrada actualizada');
+            } else {
+                const newRecord = {
+                    id: Date.now().toString(),
+                    userId: currentUser.id,
+                    date: selectedDate,
+                    entryTime: entryTime,
+                    exitTime: null,
+                    locationValid: locationResult.valid,
+                    locationDistance: locationResult.distance
+                };
+                records.push(newRecord);
+                
+                if (locationResult.valid === false) {
+                    showToast('⚠️ No estás en la ubicación correcta. Tu ubicación queda registrada', 'warning');
+                } else if (locationResult.valid === true) {
+                    showToast('✅ Entrada registrada a las ' + entryTime + ' - Ubicación correcta');
+                } else {
+                    showToast('Entrada registrada a las ' + entryTime + ' - No se pudo verificar ubicación');
+                }
+            }
+            
+            saveToStorage('records', records);
+            render();
+        }
+        
+        async function registerExit() {
+            const exitTime = getCurrentTime();
+            
+            // Verificar ubicación automáticamente
+            const locationResult = await verifyLocationForRegistration();
+            
+            const record = getRecordForDate(selectedDate);
+            if (record) {
+                record.exitTime = exitTime;
+                record.locationValid = locationResult.valid;
+                record.locationDistance = locationResult.distance;
+                
+                saveToStorage('records', records);
+                
+                if (locationResult.valid === false) {
+                    showToast('⚠️ No estás en la ubicación correcta. Tu ubicación queda registrada', 'warning');
+                } else if (locationResult.valid === true) {
+                    showToast('✅ Salida registrada a las ' + exitTime + ' - Ubicación correcta');
+                } else {
+                    showToast('Salida registrada a las ' + exitTime + ' - No se pudo verificar ubicación');
+                }
+                
+                render();
+            }
+        }
+        
+        function deleteRecord(id) {
+            if (currentUser.role !== 'admin') {
+                showToast('Solo el administrador puede eliminar registros', 'error');
+                return;
+            }
+            
+            if (confirm('¿Eliminar este registro?')) {
+                records = records.filter(r => r.id !== id);
+                saveToStorage('records', records);
+                showToast('Registro eliminado');
+                render();
+            }
+        }
+        
+        function deleteUser(id) {
+            if (confirm('¿Eliminar este usuario?')) {
+                users = users.filter(u => u.id !== id);
+                records = records.filter(r => r.userId !== id);
+                saveToStorage('users', users);
+                saveToStorage('records', records);
+                showToast('Usuario eliminado');
+                render();
+            }
+        }
+        
+        // Reloj en vivo
+        function startClock() {
+            const clockElement = document.getElementById('liveClock');
+            if (clockElement) {
+                setInterval(() => {
+                    clockElement.textContent = getCurrentTime();
+                }, 1000);
+            }
+        }
+        
+        // PWA - Configuración de instalación
+        function setupPWA() {
+            // Detectar si la app ya está instalada
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                                window.navigator.standalone === true;
+            
+            if (isStandalone) {
+                console.log('App instalada como PWA');
+                return;
+            }
+            
+            // Escuchar el evento beforeinstallprompt
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                showInstallBanner();
+            });
+            
+            // Escuchar cuando se instala
+            window.addEventListener('appinstalled', () => {
+                deferredPrompt = null;
+                hideInstallBanner();
+                showToast('✅ App instalada correctamente');
+            });
+        }
+        
+        function showInstallBanner() {
+            const banner = document.getElementById('installBanner');
+            banner.classList.add('show');
+        }
+        
+        function hideInstallBanner() {
+            const banner = document.getElementById('installBanner');
+            banner.classList.remove('show');
+        }
+        
+        // Eventos del banner de instalación
+        document.getElementById('installBtn').addEventListener('click', async () => {
+            if (!deferredPrompt) {
+                showToast('La instalación no está disponible en este momento', 'error');
+                return;
+            }
+            
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            if (outcome === 'accepted') {
+                showToast('✅ Instalando la aplicación...');
+            } else {
+                showToast('Instalación cancelada', 'warning');
+            }
+            
+            deferredPrompt = null;
+            hideInstallBanner();
+        });
+        
+        document.getElementById('closeInstallBanner').addEventListener('click', () => {
+            hideInstallBanner();
+        });
+        
+        // Registrar Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registrado:', reg.scope))
+                    .catch(err => console.log('Error al registrar Service Worker:', err));
+            });
+        }
+        
+        // Iniciar la aplicación
+        render();
+        setupPWA();
+    </script>
+</body>
+</html>
